@@ -1,0 +1,30 @@
+# Every published release updates the "latest_version" row in the Design Audit Supabase database,
+# so the team always sees the current download link and how to test it.
+name: Latest version to Supabase
+on:
+  release:
+    types: [published]
+jobs:
+  supabase:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Upsert latest_version
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          RELEASE: ${{ toJson(github.event.release) }}
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+        run: |
+          node -e '
+            const r = JSON.parse(process.env.RELEASE);
+            const zip = r.assets.find(a => a.name.endsWith(".zip"));
+            if (!zip) { console.error("no zip on the release"); process.exit(1); }
+            const steps = (r.body || "").split("\n## ")[0].replace(/^## How to test\s*/, "").trim();
+            const row = { id: 1, version: r.name || r.tag_name, download_url: zip.browser_download_url, repo_url: process.env.REPO_URL,
+                          how_to_test: steps || "See the release page.", size_mb: Math.round(zip.size / 1e6) };
+            fetch(process.env.SUPABASE_URL + "/rest/v1/latest_version?on_conflict=id", { method: "POST",
+              headers: { apikey: process.env.SUPABASE_SERVICE_KEY, Authorization: "Bearer " + process.env.SUPABASE_SERVICE_KEY,
+                         "Content-Type": "application/json", Prefer: "resolution=merge-duplicates,return=minimal" },
+              body: JSON.stringify(row) })
+              .then(async res => { if (!res.ok) { console.error(res.status, await res.text()); process.exit(1); } console.log("latest_version:", row.version, row.download_url); });
+          '
