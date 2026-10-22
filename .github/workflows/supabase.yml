@@ -19,9 +19,12 @@ jobs:
             const r = JSON.parse(process.env.RELEASE);
             const zip = r.assets.find(a => a.name.endsWith(".zip"));
             if (!zip) { console.error("no zip on the release"); process.exit(1); }
-            const steps = (r.body || "").split("\n## ")[0].replace(/^## How to test\s*/, "").trim();
-            const row = { id: 1, version: r.name || r.tag_name, download_url: zip.browser_download_url, repo_url: process.env.REPO_URL,
-                          how_to_test: steps || "See the release page.", size_mb: Math.round(zip.size / 1e6) };
+            const body = (r.body || "").replace(/\*\*/g, "");
+            const steps = body.split("\n## ")[0].replace(/^## How to test\s*/, "").trim();
+            const what = (body.split("\n## What's in this version\n")[1] || "").split("\n## ")[0]
+              .split("\n").filter(l => l.startsWith("- ")).map(l => l.slice(2).trim());
+            const row = { id: 1, version: r.name || r.tag_name, download_url: r.html_url, repo_url: process.env.REPO_URL,
+                          how_to_test: steps || "See the release page.", size_mb: Math.round(zip.size / 1e6), what_it_does: what };
             fetch(process.env.SUPABASE_URL + "/rest/v1/latest_version?on_conflict=id", { method: "POST",
               headers: { apikey: process.env.SUPABASE_SERVICE_KEY, Authorization: "Bearer " + process.env.SUPABASE_SERVICE_KEY,
                          "Content-Type": "application/json", Prefer: "resolution=merge-duplicates,return=minimal" },
