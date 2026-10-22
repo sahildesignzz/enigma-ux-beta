@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design Audit</title>
+<meta name="description" content="Design Audit: progress, and the latest Enigma UX (Beta) to download and test.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Hanken+Grotesk:wght@400;600&family=Martian+Mono&display=swap" rel="stylesheet">
+<style>
+:root { --paper:#f5f6f8; --sheet:#fff; --ink:#15171c; --muted:#545b69; --rule:#d9dde3; --cyan:#0a6a85; --magenta:#b8175a; --wash:#fff1a6; color-scheme: light dark; }
+@media (prefers-color-scheme: dark) { :root { --paper:#111318; --sheet:#191c22; --ink:#e8eaee; --muted:#9aa1ad; --rule:#2b303a; --cyan:#5cc8e0; --magenta:#ff6fa5; --wash:rgba(255,221,0,.16); } }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 17px/1.55 'Hanken Grotesk', system-ui, sans-serif; }
+main { max-width: 860px; margin: 0 auto; padding: 48px 16px 64px; }
+h1 { font: 800 44px/1.05 'Bricolage Grotesque', system-ui; margin: 0 0 10px; }
+h2 { font: 600 13px 'Martian Mono', monospace; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin: 44px 0 14px; }
+.lede { color: var(--muted); margin: 0; max-width: 62ch; }
+.card { background: var(--sheet); border: 1px solid var(--rule); border-radius: 12px; padding: 22px; }
+.ver { font: 800 26px/1.2 'Bricolage Grotesque', system-ui; margin: 0 0 4px; }
+.mono { font: 13px 'Martian Mono', monospace; color: var(--muted); }
+.btn { display: inline-block; margin: 16px 12px 4px 0; padding: 11px 18px; border-radius: 8px; background: var(--ink); color: var(--paper); text-decoration: none; font-weight: 600; }
+.btn.alt { background: transparent; color: var(--ink); border: 1px solid var(--rule); }
+.steps { white-space: pre-wrap; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--rule); font-size: 15.5px; }
+ol.updates { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+ol.updates li { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 16px 18px; display: grid; grid-template-columns: 2.4em 1fr; gap: 4px 12px; }
+.n { font: 13px 'Martian Mono', monospace; color: var(--muted); padding-top: 3px; }
+.t { font-weight: 600; }
+.t .st { font: 12px 'Martian Mono', monospace; margin-left: 8px; color: var(--cyan); }
+.t .st.prog { color: var(--magenta); }
+.s { grid-column: 2; color: var(--muted); font-size: 15.5px; }
+footer { margin-top: 44px; color: var(--muted); font-size: 14px; }
+a { color: var(--cyan); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Design Audit</h1>
+  <p class="lede">A design audit for designers, in the browser: open a page, press Analyse, and see what's wrong and where, with proof for every finding. Below: the latest version to try, and every major update so far.</p>
+
+  <h2>Try the latest version</h2>
+  <div class="card" id="latest"><p class="mono">Loading…</p></div>
+
+  <h2>Major updates</h2>
+  <ol class="updates" id="updates"><li><span></span><span class="mono">Loading…</span></li></ol>
+
+  <footer>Live from the project's database (Supabase, public read-only) · <a href="https://github.com/sahildesignzz/enigma-ux-beta">GitHub</a> · <a href="https://mragjkvydtudcrckhnvu.supabase.co/rest/v1/updates?select=*&amp;order=n&amp;apikey=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1yYWdqa3Z5ZHR1ZGNyY2tobnZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI2Mzc1MTYsImV4cCI6MjEwODIxMzUxNn0.WkUycF_PM1zni3elTNl5r7NtCmgSnyoy62VmAYqizxw">raw data</a></footer>
+</main>
+<script>
+const API = 'https://mragjkvydtudcrckhnvu.supabase.co/rest/v1/';
+const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1yYWdqa3Z5ZHR1ZGNyY2tobnZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI2Mzc1MTYsImV4cCI6MjEwODIxMzUxNn0.WkUycF_PM1zni3elTNl5r7NtCmgSnyoy62VmAYqizxw'; // public read-only key: the database only allows reading
+const get = p => fetch(API + p, { headers: { apikey: KEY } }).then(r => r.ok ? r.json() : Promise.reject(r.status));
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+const md = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/`(.+?)`/g, '<code>$1</code>');
+
+get('latest_version?select=*').then(([v]) => {
+  document.getElementById('latest').innerHTML = v ? `
+    <p class="ver">${esc(v.version)}</p><p class="mono">Chrome extension · ${v.size_mb} MB zip</p>
+    <a class="btn" href="${esc(v.download_url)}">Download</a><a class="btn alt" href="${esc(v.repo_url)}/releases/latest">Release page</a>
+    <div class="steps">${md(v.how_to_test)}</div>`
+  : '<p class="mono">The first release is on its way.</p>';
+}).catch(e => { document.getElementById('latest').innerHTML = '<p class="mono">Couldn’t load (' + e + ').</p>'; });
+
+get('updates?select=*&order=n').then(rows => {
+  document.getElementById('updates').innerHTML = rows.map(u => `<li><span class="n">${u.n}</span>
+    <span class="t">${esc(u.title)}<span class="st ${u.status === 'Done' ? '' : 'prog'}">${esc(u.status)}</span></span>
+    <span class="s">${esc(u.summary)}</span></li>`).join('');
+}).catch(e => { document.getElementById('updates').innerHTML = '<li><span></span><span class="mono">Couldn’t load (' + e + ').</span></li>'; });
+</script>
+</body>
+</html>
